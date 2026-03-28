@@ -1,9 +1,10 @@
 import "./globals.css";
+import Navbar from "./components/Navbar";
 
 export const metadata = {
   title: "Oh! So Legal",
   description:
-    "A legal awareness platform providing structured clarity on legal issues in Hyderabad. Get your queries reviewed by experienced advocates.",
+    "Legal awareness platform providing clarity on legal issues.",
 };
 
 export default function RootLayout({
@@ -14,7 +15,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-white min-h-screen">
+
+        {/* 🔥 GLOBAL NAVBAR */}
+        <Navbar />
+
+        {/* PAGE CONTENT */}
         {children}
+
       </body>
     </html>
   );

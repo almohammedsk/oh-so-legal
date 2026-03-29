@@ -92,3 +92,21 @@ export default function Home() {
     </div>
   );
 }
+{/* 🔥 CONFIDENTIALITY SECTION */}
+<div className="mt-24 max-w-4xl mx-auto px-6">
+  <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-8 text-center shadow-xl">
+
+    <h2 className="text-2xl font-semibold mb-4">
+      Confidential by Design
+    </h2>
+
+    <p className="text-gray-300 leading-relaxed">
+      We understand the sensitivity of legal matters. Information shared on this platform is handled with confidentiality and used solely for providing general legal awareness.
+    </p>
+
+    <p className="text-gray-400 mt-4 text-sm">
+      Reasonable safeguards are implemented to protect user data. Users are advised to exercise discretion while sharing sensitive information.
+    </p>
+
+  </div>
+</div>

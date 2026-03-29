@@ -111,15 +111,14 @@ ${DISCLAIMER}`;
               </a>
             )}
 
-            {/* RESPONSE BOX */}
+            {/* RESPONSE */}
             <textarea
-              className="w-full mt-3 p-3 rounded-lg bg-white text-black placeholder-gray-500"
+              className="w-full mt-3 p-3 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Write response..."
               value={q.response || ""}
               onChange={(e) => handleResponseChange(q.id, e.target.value)}
             />
 
-            {/* BUTTONS */}
             <div className="flex gap-2 mt-2 flex-wrap">
               <button
                 onClick={() => saveResponse(q.id, q.response)}
@@ -136,10 +135,10 @@ ${DISCLAIMER}`;
               </button>
             </div>
 
-            {/* ASSIGN */}
+            {/* ✅ FIXED ASSIGN DROPDOWN */}
             {user?.role === "senior" && (
               <select
-                className="mt-3 p-2 rounded text-black"
+                className="mt-3 w-full p-3 rounded-lg bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={q.assigned_to || ""}
                 onChange={(e) => assignUser(q.id, e.target.value)}
               >
@@ -152,13 +151,13 @@ ${DISCLAIMER}`;
               </select>
             )}
 
-            {/* REFUSE + DELETE */}
+            {/* ✅ FIXED REFUSAL INPUT */}
             {user?.role === "senior" && (
               <div className="mt-3 space-y-2">
 
                 <input
                   placeholder="Reason for refusal"
-                  className="w-full p-2 rounded text-black"
+                  className="w-full p-3 rounded-lg bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   onChange={(e) => (q.refusal_reason = e.target.value)}
                 />
 

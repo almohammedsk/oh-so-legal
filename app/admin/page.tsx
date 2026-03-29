@@ -10,8 +10,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
-  const DISCLAIMER = `This communication is provided solely for general legal awareness based on limited facts shared. It does not constitute legal advice, nor does it create any advocate-client relationship. Users are advised to seek independent professional advice before acting on any information provided.`;
-
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -59,69 +57,16 @@ export default function AdminPage() {
     fetchQueries(user);
   };
 
-  const assignUser = async (id: string, name: string) => {
-    await supabase
-      .from("queries")
-      .update({ assigned_to: name })
-      .eq("id", id);
-
-    fetchQueries(user);
-  };
-
-  // ✅ WHATSAPP (RESTORED)
   const sendWhatsApp = (q: any) => {
-    if (!q.phone) {
-      alert("No phone number available");
-      return;
-    }
-
     const message = `Hello ${q.name},
 
-With reference to your query (Ticket ID: ${q.ticket_id}), the following information is provided for general legal awareness:
+${q.response}
 
-${q.response || "Response not added yet"}
+This is general legal awareness.`;
 
-${DISCLAIMER}
-
-– Team Oh! So Legal`;
-
-    const url = `https://wa.me/${q.phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/${q.phone}?text=${encodeURIComponent(message)}`);
   };
 
-  // ✅ EMAIL (NEW)
-  const sendEmail = async (q: any) => {
-    if (!q.email) {
-      alert("No email available");
-      return;
-    }
-
-    const message = `Hello ${q.name},
-
-With reference to your query (Ticket ID: ${q.ticket_id}), the following information is provided for general legal awareness:
-
-${q.response || "Response not added yet"}
-
-${DISCLAIMER}
-
-– Team Oh! So Legal`;
-
-    await fetch("/api/send-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: q.email,
-        subject: `Response to your query (${q.ticket_id})`,
-        message,
-      }),
-    });
-
-    alert("Email sent successfully");
-  };
-
-  // 🔐 DELETE
   const deleteQuery = async (id: string) => {
     if (!confirm("Delete this query?")) return;
     if (prompt("Type DELETE to confirm") !== "DELETE") return;
@@ -130,7 +75,6 @@ ${DISCLAIMER}
     fetchQueries(user);
   };
 
-  // ⚠️ REFUSE
   const refuseQuery = async (id: string, reason: string) => {
     if (!reason) return alert("Enter reason");
 
@@ -139,10 +83,7 @@ ${DISCLAIMER}
 
     await supabase
       .from("queries")
-      .update({
-        status: "refused",
-        refusal_reason: reason,
-      })
+      .update({ status: "refused", refusal_reason: reason })
       .eq("id", id);
 
     fetchQueries(user);
@@ -161,26 +102,36 @@ ${DISCLAIMER}
           >
             <p><strong>Ticket:</strong> {q.ticket_id}</p>
             <p><strong>Name:</strong> {q.name}</p>
-            <p><strong>Email:</strong> {q.email}</p>
-            <p><strong>Phone:</strong> {q.phone}</p>
 
-            <p className="mt-2 text-gray-200">{q.query}</p>
-
-            {/* RESPONSE */}
-            <textarea
-              className="w-full mt-3 p-3 rounded-lg !bg-white !text-black"
-              placeholder="Provide structured legal awareness response..."
-              value={q.response || ""}
-              onChange={(e) => handleResponseChange(q.id, e.target.value)}
-            />
-
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <button
-                onClick={() => saveResponse(q.id, q.response)}
-                className="bg-blue-600 px-4 py-2 rounded"
+            {/* ✅ CONTACT INFO */}
+            <p>
+              <strong>Email:</strong>{" "}
+              <a
+                href={`mailto:${q.email}`}
+                className="text-blue-400 underline"
               >
-                Save
-              </button>
+                {q.email}
+              </a>
+            </p>
+
+            <p>
+              <strong>Phone:</strong>{" "}
+              <a
+                href={`tel:${q.phone}`}
+                className="text-green-400 underline"
+              >
+                {q.phone}
+              </a>
+            </p>
+
+            {/* QUICK ACTIONS */}
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <a
+                href={`mailto:${q.email}`}
+                className="bg-purple-600 px-4 py-2 rounded"
+              >
+                Open Email
+              </a>
 
               <button
                 onClick={() => sendWhatsApp(q)}
@@ -188,32 +139,26 @@ ${DISCLAIMER}
               >
                 WhatsApp
               </button>
-
-              <button
-                onClick={() => sendEmail(q)}
-                className="bg-purple-600 px-4 py-2 rounded"
-              >
-                Email
-              </button>
             </div>
 
-            {/* ASSIGN */}
-            {user?.role === "senior" && (
-              <select
-                className="mt-3 w-full p-3 rounded-lg !bg-white !text-black"
-                value={q.assigned_to || ""}
-                onChange={(e) => assignUser(q.id, e.target.value)}
-              >
-                <option value="">Assign</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.name}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <p className="mt-3 text-gray-300">{q.query}</p>
 
-            {/* REFUSE + DELETE */}
+            {/* RESPONSE */}
+            <textarea
+              className="w-full mt-3 p-3 rounded-lg !bg-white !text-black"
+              placeholder="Write response..."
+              value={q.response || ""}
+              onChange={(e) => handleResponseChange(q.id, e.target.value)}
+            />
+
+            <button
+              onClick={() => saveResponse(q.id, q.response)}
+              className="bg-blue-600 px-4 py-2 mt-2 rounded"
+            >
+              Save
+            </button>
+
+            {/* SENIOR CONTROLS */}
             {user?.role === "senior" && (
               <div className="mt-3 space-y-2">
 
@@ -244,12 +189,6 @@ ${DISCLAIMER}
             <p className="text-sm mt-2 text-gray-400">
               Status: {q.status}
             </p>
-
-            {q.refusal_reason && (
-              <p className="text-sm text-red-400">
-                Reason: {q.refusal_reason}
-              </p>
-            )}
           </div>
         ))}
       </div>

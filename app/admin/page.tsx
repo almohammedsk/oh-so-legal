@@ -10,8 +10,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
-  const DISCLAIMER = `Disclaimer: This response is for general legal awareness only and does not constitute legal advice.`;
-
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -41,31 +39,19 @@ export default function AdminPage() {
     setUsers(data || []);
   };
 
+  const handleResponseChange = (id: string, value: string) => {
+    setQueries((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, response: value } : q))
+    );
+  };
+
   const saveResponse = async (id: string, response: string) => {
     await supabase.from("queries").update({ response, status: "responded" }).eq("id", id);
-    if (user) fetchQueries(user);
+    fetchQueries(user);
   };
 
-  const handleResponseChange = (id: string, value: string) => {
-    const updated = queries.map((q) => (q.id === id ? { ...q, response: value } : q));
-    setQueries(updated);
-  };
-
-  const sendWhatsApp = (q: any) => {
-    const msg = `Hello ${q.name},
-
-${q.response}
-
-${DISCLAIMER}`;
-
-    window.open(`https://wa.me/${q.phone}?text=${encodeURIComponent(msg)}`);
-  };
-
-  const deleteQuery = async (id: string) => {
-    if (!confirm("Delete this query?")) return;
-    if (prompt("Type DELETE to confirm") !== "DELETE") return;
-
-    await supabase.from("queries").delete().eq("id", id);
+  const assignUser = async (id: string, name: string) => {
+    await supabase.from("queries").update({ assigned_to: name }).eq("id", id);
     fetchQueries(user);
   };
 
@@ -83,62 +69,47 @@ ${DISCLAIMER}`;
     fetchQueries(user);
   };
 
-  const assignUser = async (id: string, name: string) => {
-    await supabase.from("queries").update({ assigned_to: name }).eq("id", id);
+  const deleteQuery = async (id: string) => {
+    if (!confirm("Delete this query?")) return;
+    if (prompt("Type DELETE to confirm") !== "DELETE") return;
+
+    await supabase.from("queries").delete().eq("id", id);
     fetchQueries(user);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6">
 
-      <h1 className="text-3xl mb-6 font-semibold">Admin Dashboard</h1>
+      <h1 className="text-3xl mb-6">Admin Dashboard</h1>
 
       <div className="space-y-6">
         {queries.map((q) => (
-          <div
-            key={q.id}
-            className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-xl shadow-lg"
-          >
+          <div key={q.id} className="bg-white/10 backdrop-blur-xl p-5 rounded-xl">
+
             <p><strong>Ticket:</strong> {q.ticket_id}</p>
             <p><strong>Name:</strong> {q.name}</p>
-            <p><strong>Category:</strong> {q.category}</p>
 
-            <p className="mt-2 text-gray-200">{q.query}</p>
-
-            {q.file_url && (
-              <a href={q.file_url} target="_blank" className="text-blue-400 underline">
-                View File
-              </a>
-            )}
+            <p className="mt-2 text-gray-300">{q.query}</p>
 
             {/* RESPONSE */}
             <textarea
-              className="w-full mt-3 p-3 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full mt-3 p-3 rounded-lg !bg-white !text-black !placeholder-gray-500"
               placeholder="Write response..."
               value={q.response || ""}
               onChange={(e) => handleResponseChange(q.id, e.target.value)}
             />
 
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <button
-                onClick={() => saveResponse(q.id, q.response)}
-                className="bg-blue-600 px-4 py-2 rounded"
-              >
-                Save
-              </button>
+            <button
+              onClick={() => saveResponse(q.id, q.response)}
+              className="bg-blue-600 px-4 py-2 rounded mt-2"
+            >
+              Save
+            </button>
 
-              <button
-                onClick={() => sendWhatsApp(q)}
-                className="bg-green-600 px-4 py-2 rounded"
-              >
-                WhatsApp
-              </button>
-            </div>
-
-            {/* ✅ FIXED ASSIGN DROPDOWN */}
+            {/* ✅ FIXED ASSIGN */}
             {user?.role === "senior" && (
               <select
-                className="mt-3 w-full p-3 rounded-lg bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="mt-3 w-full p-3 rounded-lg !bg-white !text-black"
                 value={q.assigned_to || ""}
                 onChange={(e) => assignUser(q.id, e.target.value)}
               >
@@ -157,7 +128,7 @@ ${DISCLAIMER}`;
 
                 <input
                   placeholder="Reason for refusal"
-                  className="w-full p-3 rounded-lg bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full p-3 rounded-lg !bg-white !text-black !placeholder-gray-500"
                   onChange={(e) => (q.refusal_reason = e.target.value)}
                 />
 
@@ -179,15 +150,6 @@ ${DISCLAIMER}`;
               </div>
             )}
 
-            <p className="text-sm mt-2 text-gray-400">
-              Status: {q.status}
-            </p>
-
-            {q.refusal_reason && (
-              <p className="text-sm text-red-400">
-                Reason: {q.refusal_reason}
-              </p>
-            )}
           </div>
         ))}
       </div>

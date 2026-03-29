@@ -17,6 +17,7 @@ export default function AskQuery() {
     query: "",
   });
 
+  const [file, setFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ticket, setTicket] = useState("");
@@ -37,16 +38,41 @@ export default function AskQuery() {
 
     const ticket_id = generateTicket();
 
+    let file_url = null;
+
+    // 📁 UPLOAD FILE IF EXISTS
+    if (file) {
+      const fileName = `${Date.now()}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("query-files")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        alert("File upload failed");
+        setLoading(false);
+        return;
+      }
+
+      const { data } = supabase.storage
+        .from("query-files")
+        .getPublicUrl(fileName);
+
+      file_url = data.publicUrl;
+    }
+
+    // 🧾 INSERT QUERY
     const { error } = await supabase.from("queries").insert([
       {
         ...form,
         ticket_id,
+        file_url,
       },
     ]);
 
     if (!error) {
 
-      // 🔥 SEND FULL DATA TO EMAIL API
+      // 📧 EMAIL
       await fetch("/api/send-email", {
         method: "POST",
         headers: {
@@ -72,6 +98,7 @@ export default function AskQuery() {
         query: "",
       });
 
+      setFile(null);
       setAgreed(false);
 
     } else {
@@ -95,10 +122,6 @@ export default function AskQuery() {
             Your query has been securely received.
             <br />
             Ticket ID: <strong>{ticket}</strong>
-            <br />
-            <span className="text-sm opacity-80">
-              An advocate will respond within 36 hours.
-            </span>
           </div>
         )}
 
@@ -121,7 +144,7 @@ export default function AskQuery() {
           />
 
           <input
-            placeholder="Phone (with country code)"
+            placeholder="Phone"
             className={inputStyle}
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -152,6 +175,18 @@ export default function AskQuery() {
             onChange={(e) => setForm({ ...form, query: e.target.value })}
             required
           />
+
+          {/* 📁 FILE UPLOAD */}
+          <div>
+            <label className="text-sm text-gray-400">
+              Upload Document (optional)
+            </label>
+            <input
+              type="file"
+              className="w-full mt-2 text-sm"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+          </div>
 
           <div className="text-xs text-gray-400">
             This platform provides general legal awareness and not legal advice.

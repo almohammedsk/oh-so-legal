@@ -10,7 +10,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
-  // ✅ STRONG DISCLAIMER
   const DISCLAIMER = `This communication is provided solely for general legal awareness based on limited facts shared. It does not constitute legal advice, nor does it create any advocate-client relationship. Users are advised to seek independent professional advice before acting on any information provided.`;
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export default function AdminPage() {
     fetchQueries(user);
   };
 
-  // ✅ STRUCTURED + COMPLIANT WHATSAPP MESSAGE
+  // ✅ WHATSAPP (RESTORED)
   const sendWhatsApp = (q: any) => {
     if (!q.phone) {
       alert("No phone number available");
@@ -78,7 +77,7 @@ export default function AdminPage() {
 
     const message = `Hello ${q.name},
 
-With reference to your query (Ticket ID: ${q.ticket_id}), the following information is provided for general legal awareness based on the limited facts shared:
+With reference to your query (Ticket ID: ${q.ticket_id}), the following information is provided for general legal awareness:
 
 ${q.response || "Response not added yet"}
 
@@ -88,6 +87,38 @@ ${DISCLAIMER}
 
     const url = `https://wa.me/${q.phone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
+  };
+
+  // ✅ EMAIL (NEW)
+  const sendEmail = async (q: any) => {
+    if (!q.email) {
+      alert("No email available");
+      return;
+    }
+
+    const message = `Hello ${q.name},
+
+With reference to your query (Ticket ID: ${q.ticket_id}), the following information is provided for general legal awareness:
+
+${q.response || "Response not added yet"}
+
+${DISCLAIMER}
+
+– Team Oh! So Legal`;
+
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: q.email,
+        subject: `Response to your query (${q.ticket_id})`,
+        message,
+      }),
+    });
+
+    alert("Email sent successfully");
   };
 
   // 🔐 DELETE
@@ -130,21 +161,12 @@ ${DISCLAIMER}
           >
             <p><strong>Ticket:</strong> {q.ticket_id}</p>
             <p><strong>Name:</strong> {q.name}</p>
-            <p><strong>Category:</strong> {q.category}</p>
+            <p><strong>Email:</strong> {q.email}</p>
+            <p><strong>Phone:</strong> {q.phone}</p>
 
             <p className="mt-2 text-gray-200">{q.query}</p>
 
-            {q.file_url && (
-              <a
-                href={q.file_url}
-                target="_blank"
-                className="text-blue-400 underline block mt-2"
-              >
-                View File
-              </a>
-            )}
-
-            {/* RESPONSE BOX */}
+            {/* RESPONSE */}
             <textarea
               className="w-full mt-3 p-3 rounded-lg !bg-white !text-black"
               placeholder="Provide structured legal awareness response..."
@@ -165,6 +187,13 @@ ${DISCLAIMER}
                 className="bg-green-600 px-4 py-2 rounded"
               >
                 WhatsApp
+              </button>
+
+              <button
+                onClick={() => sendEmail(q)}
+                className="bg-purple-600 px-4 py-2 rounded"
+              >
+                Email
               </button>
             </div>
 

@@ -10,7 +10,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
-  const DISCLAIMER = `Disclaimer: This response is for general legal awareness only and does not constitute legal advice or create any advocate-client relationship.`;
+  const DISCLAIMER = `Disclaimer: This response is for general legal awareness only and does not constitute legal advice.`;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -26,10 +26,7 @@ export default function AdminPage() {
   }, []);
 
   const fetchQueries = async (currentUser: any) => {
-    let query = supabase
-      .from("queries")
-      .select("*")
-      .order("created_at", { ascending: false });
+    let query = supabase.from("queries").select("*").order("created_at", { ascending: false });
 
     if (currentUser.role === "junior") {
       query = query.eq("assigned_to", currentUser.name);
@@ -44,128 +41,100 @@ export default function AdminPage() {
     setUsers(data || []);
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from("queries").update({ status }).eq("id", id);
-    if (user) fetchQueries(user);
-  };
-
-  // 🔥 DOUBLE CONFIRM DELETE
-  const deleteQuery = async (id: string) => {
-    const confirm1 = confirm("Delete this query?");
-    if (!confirm1) return;
-
-    const confirm2 = prompt("Type DELETE to confirm");
-    if (confirm2 !== "DELETE") return;
-
-    await supabase.from("queries").delete().eq("id", id);
-    if (user) fetchQueries(user);
-  };
-
-  // 🔥 DOUBLE CONFIRM REFUSE
-  const refuseQuery = async (id: string, reason: string) => {
-    if (!reason || !reason.trim()) {
-      alert("Enter reason");
-      return;
-    }
-
-    const confirm1 = confirm("Refuse this query?");
-    if (!confirm1) return;
-
-    const confirm2 = prompt("Type REFUSE to confirm");
-    if (confirm2 !== "REFUSE") return;
-
-    await supabase
-      .from("queries")
-      .update({
-        status: "refused",
-        refusal_reason: reason,
-      })
-      .eq("id", id);
-
-    if (user) fetchQueries(user);
-  };
-
-  const assignUser = async (id: string, name: string) => {
-    await supabase.from("queries").update({ assigned_to: name }).eq("id", id);
-    if (user) fetchQueries(user);
-  };
-
   const saveResponse = async (id: string, response: string) => {
-    await supabase
-      .from("queries")
-      .update({ response, status: "responded" })
-      .eq("id", id);
-
+    await supabase.from("queries").update({ response, status: "responded" }).eq("id", id);
     if (user) fetchQueries(user);
   };
 
   const handleResponseChange = (id: string, value: string) => {
-    const updated = queries.map((q) =>
-      q.id === id ? { ...q, response: value } : q
-    );
+    const updated = queries.map((q) => (q.id === id ? { ...q, response: value } : q));
     setQueries(updated);
   };
 
-  // 🔥 WHATSAPP BACK
   const sendWhatsApp = (q: any) => {
-    if (!q.phone) {
-      alert("No phone");
-      return;
-    }
+    const msg = `Hello ${q.name},
 
-    const message = `Hello ${q.name},
+${q.response}
 
-With reference to your query (${q.ticket_id}):
+${DISCLAIMER}`;
 
-${q.response || "Response pending"}
-
-${DISCLAIMER}
-
-– Team Oh! So Legal`;
-
-    const url = `https://wa.me/${q.phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/${q.phone}?text=${encodeURIComponent(msg)}`);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    router.push("/login");
+  const deleteQuery = async (id: string) => {
+    if (!confirm("Delete this query?")) return;
+    if (prompt("Type DELETE to confirm") !== "DELETE") return;
+
+    await supabase.from("queries").delete().eq("id", id);
+    fetchQueries(user);
+  };
+
+  const refuseQuery = async (id: string, reason: string) => {
+    if (!reason) return alert("Enter reason");
+
+    if (!confirm("Refuse this query?")) return;
+    if (prompt("Type REFUSE to confirm") !== "REFUSE") return;
+
+    await supabase
+      .from("queries")
+      .update({ status: "refused", refusal_reason: reason })
+      .eq("id", id);
+
+    fetchQueries(user);
+  };
+
+  const assignUser = async (id: string, name: string) => {
+    await supabase.from("queries").update({ assigned_to: name }).eq("id", id);
+    fetchQueries(user);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6">
 
-      <div className="flex justify-between mb-6">
-        <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
-        <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded">
-          Logout
-        </button>
-      </div>
+      <h1 className="text-3xl mb-6 font-semibold">Admin Dashboard</h1>
 
       <div className="space-y-6">
         {queries.map((q) => (
           <div
             key={q.id}
-            className="bg-white/10 backdrop-blur-xl p-5 rounded-xl border border-white/10 shadow-lg"
+            className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-xl shadow-lg"
           >
-
             <p><strong>Ticket:</strong> {q.ticket_id}</p>
             <p><strong>Name:</strong> {q.name}</p>
             <p><strong>Category:</strong> {q.category}</p>
 
-            <p className="mt-2 text-gray-300">
-              <strong>Query:</strong> {q.query}
-            </p>
+            <p className="mt-2 text-gray-200">{q.query}</p>
 
             {q.file_url && (
-              <a
-                href={q.file_url}
-                target="_blank"
-                className="text-blue-400 underline block mt-2"
-              >
+              <a href={q.file_url} target="_blank" className="text-blue-400 underline">
                 View File
               </a>
             )}
+
+            {/* RESPONSE BOX */}
+            <textarea
+              className="w-full mt-3 p-3 rounded-lg bg-white text-black placeholder-gray-500"
+              placeholder="Write response..."
+              value={q.response || ""}
+              onChange={(e) => handleResponseChange(q.id, e.target.value)}
+            />
+
+            {/* BUTTONS */}
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <button
+                onClick={() => saveResponse(q.id, q.response)}
+                className="bg-blue-600 px-4 py-2 rounded"
+              >
+                Save
+              </button>
+
+              <button
+                onClick={() => sendWhatsApp(q)}
+                className="bg-green-600 px-4 py-2 rounded"
+              >
+                WhatsApp
+              </button>
+            </div>
 
             {/* ASSIGN */}
             {user?.role === "senior" && (
@@ -183,36 +152,13 @@ ${DISCLAIMER}
               </select>
             )}
 
-            {/* RESPONSE */}
-            <textarea
-              className="w-full p-3 mt-3 rounded bg-white text-black"
-              value={q.response || ""}
-              onChange={(e) => handleResponseChange(q.id, e.target.value)}
-            />
-
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <button
-                onClick={() => saveResponse(q.id, q.response)}
-                className="bg-blue-600 px-4 py-2 rounded"
-              >
-                Save
-              </button>
-
-              <button
-                onClick={() => sendWhatsApp(q)}
-                className="bg-green-600 px-4 py-2 rounded"
-              >
-                WhatsApp
-              </button>
-            </div>
-
-            {/* SENIOR CONTROLS */}
+            {/* REFUSE + DELETE */}
             {user?.role === "senior" && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-3 space-y-2">
 
                 <input
-                  placeholder="Refusal reason"
-                  className="w-full p-2 text-black rounded"
+                  placeholder="Reason for refusal"
+                  className="w-full p-2 rounded text-black"
                   onChange={(e) => (q.refusal_reason = e.target.value)}
                 />
 
@@ -226,7 +172,7 @@ ${DISCLAIMER}
 
                   <button
                     onClick={() => deleteQuery(q.id)}
-                    className="bg-red-700 px-4 py-2 rounded"
+                    className="bg-red-600 px-4 py-2 rounded"
                   >
                     Delete
                   </button>

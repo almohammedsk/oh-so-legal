@@ -12,7 +12,7 @@ export default function Navbar() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       animate={{
-        width: hovered ? 460 : 70,
+        width: hovered ? 420 : 70,
         height: 60,
         borderRadius: hovered ? 30 : 9999,
       }}
@@ -21,19 +21,19 @@ export default function Navbar() {
         stiffness: 220,
         damping: 18,
       }}
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center"
+      className="fixed top-6 right-6 z-50 flex items-center justify-center"
     >
-      {/* HALO */}
+      {/* 🔥 HALO */}
       <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 opacity-30 blur-2xl"></div>
 
-      {/* SHADOW */}
+      {/* 🔥 SHADOW DEPTH */}
       <div className="absolute inset-0 rounded-full shadow-[0_20px_60px_rgba(0,0,0,0.8)]"></div>
 
-      {/* GLASS */}
-      <div className="relative w-full h-full flex items-center justify-center px-5 bg-white/10 backdrop-blur-2xl rounded-full">
+      {/* 🔥 GLASS CONTAINER */}
+      <div className="relative w-full h-full flex items-center justify-center px-5 bg-white/10 backdrop-blur-2xl rounded-full border border-white/10">
 
         {/* REFLECTION */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 via-transparent to-transparent opacity-40"></div>
+        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 via-transparent to-transparent opacity-30"></div>
 
         {hovered ? (
           <div className="flex gap-6 text-sm text-white relative z-10">

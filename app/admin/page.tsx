@@ -10,6 +10,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
+  const DISCLAIMER = `Disclaimer: This response is for general legal awareness only and does not constitute legal advice or create any advocate-client relationship.`;
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -47,19 +49,30 @@ export default function AdminPage() {
     if (user) fetchQueries(user);
   };
 
+  // 🔥 DOUBLE CONFIRM DELETE
   const deleteQuery = async (id: string) => {
-    const confirmDelete = confirm("Are you sure you want to delete this query?");
-    if (!confirmDelete) return;
+    const confirm1 = confirm("Delete this query?");
+    if (!confirm1) return;
+
+    const confirm2 = prompt("Type DELETE to confirm");
+    if (confirm2 !== "DELETE") return;
 
     await supabase.from("queries").delete().eq("id", id);
     if (user) fetchQueries(user);
   };
 
+  // 🔥 DOUBLE CONFIRM REFUSE
   const refuseQuery = async (id: string, reason: string) => {
     if (!reason || !reason.trim()) {
-      alert("Please enter a reason");
+      alert("Enter reason");
       return;
     }
+
+    const confirm1 = confirm("Refuse this query?");
+    if (!confirm1) return;
+
+    const confirm2 = prompt("Type REFUSE to confirm");
+    if (confirm2 !== "REFUSE") return;
 
     await supabase
       .from("queries")
@@ -77,18 +90,6 @@ export default function AdminPage() {
     if (user) fetchQueries(user);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    router.push("/login");
-  };
-
-  const handleResponseChange = (id: string, value: string) => {
-    const updated = queries.map((q) =>
-      q.id === id ? { ...q, response: value } : q
-    );
-    setQueries(updated);
-  };
-
   const saveResponse = async (id: string, response: string) => {
     await supabase
       .from("queries")
@@ -98,11 +99,44 @@ export default function AdminPage() {
     if (user) fetchQueries(user);
   };
 
+  const handleResponseChange = (id: string, value: string) => {
+    const updated = queries.map((q) =>
+      q.id === id ? { ...q, response: value } : q
+    );
+    setQueries(updated);
+  };
+
+  // 🔥 WHATSAPP BACK
+  const sendWhatsApp = (q: any) => {
+    if (!q.phone) {
+      alert("No phone");
+      return;
+    }
+
+    const message = `Hello ${q.name},
+
+With reference to your query (${q.ticket_id}):
+
+${q.response || "Response pending"}
+
+${DISCLAIMER}
+
+– Team Oh! So Legal`;
+
+    const url = `https://wa.me/${q.phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
 
       <div className="flex justify-between mb-6">
-        <h1 className="text-3xl">Admin Dashboard</h1>
+        <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
         <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded">
           Logout
         </button>
@@ -110,22 +144,33 @@ export default function AdminPage() {
 
       <div className="space-y-6">
         {queries.map((q) => (
-          <div key={q.id} className="bg-neutral-900 p-5 rounded-lg">
+          <div
+            key={q.id}
+            className="bg-white/10 backdrop-blur-xl p-5 rounded-xl border border-white/10 shadow-lg"
+          >
 
             <p><strong>Ticket:</strong> {q.ticket_id}</p>
             <p><strong>Name:</strong> {q.name}</p>
-            <p><strong>Query:</strong> {q.query}</p>
+            <p><strong>Category:</strong> {q.category}</p>
+
+            <p className="mt-2 text-gray-300">
+              <strong>Query:</strong> {q.query}
+            </p>
 
             {q.file_url && (
-              <a href={q.file_url} target="_blank" className="text-blue-400 underline">
+              <a
+                href={q.file_url}
+                target="_blank"
+                className="text-blue-400 underline block mt-2"
+              >
                 View File
               </a>
             )}
 
-            {/* 👤 ASSIGN */}
+            {/* ASSIGN */}
             {user?.role === "senior" && (
               <select
-                className="mt-2 text-black p-2 rounded"
+                className="mt-3 p-2 rounded text-black"
                 value={q.assigned_to || ""}
                 onChange={(e) => assignUser(q.id, e.target.value)}
               >
@@ -140,44 +185,52 @@ export default function AdminPage() {
 
             {/* RESPONSE */}
             <textarea
-              className="w-full p-2 mt-3 text-black rounded"
+              className="w-full p-3 mt-3 rounded bg-white text-black"
               value={q.response || ""}
               onChange={(e) => handleResponseChange(q.id, e.target.value)}
             />
 
-            <button
-              onClick={() => saveResponse(q.id, q.response)}
-              className="bg-blue-600 px-4 py-2 mt-2 rounded"
-            >
-              Save Response
-            </button>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <button
+                onClick={() => saveResponse(q.id, q.response)}
+                className="bg-blue-600 px-4 py-2 rounded"
+              >
+                Save
+              </button>
 
-            {/* 🔥 SENIOR CONTROLS */}
+              <button
+                onClick={() => sendWhatsApp(q)}
+                className="bg-green-600 px-4 py-2 rounded"
+              >
+                WhatsApp
+              </button>
+            </div>
+
+            {/* SENIOR CONTROLS */}
             {user?.role === "senior" && (
               <div className="mt-4 space-y-2">
 
-                {/* REFUSE */}
                 <input
-                  placeholder="Reason for refusal"
+                  placeholder="Refusal reason"
                   className="w-full p-2 text-black rounded"
                   onChange={(e) => (q.refusal_reason = e.target.value)}
                 />
 
-                <button
-                  onClick={() => refuseQuery(q.id, q.refusal_reason)}
-                  className="bg-yellow-600 px-4 py-2 rounded mr-2"
-                >
-                  Refuse
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => refuseQuery(q.id, q.refusal_reason)}
+                    className="bg-yellow-600 px-4 py-2 rounded"
+                  >
+                    Refuse
+                  </button>
 
-                {/* DELETE */}
-                <button
-                  onClick={() => deleteQuery(q.id)}
-                  className="bg-red-700 px-4 py-2 rounded"
-                >
-                  Delete
-                </button>
-
+                  <button
+                    onClick={() => deleteQuery(q.id)}
+                    className="bg-red-700 px-4 py-2 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             )}
 
@@ -187,10 +240,9 @@ export default function AdminPage() {
 
             {q.refusal_reason && (
               <p className="text-sm text-red-400">
-                Refusal Reason: {q.refusal_reason}
+                Reason: {q.refusal_reason}
               </p>
             )}
-
           </div>
         ))}
       </div>
